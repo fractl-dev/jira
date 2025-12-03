@@ -1,6 +1,4 @@
-const al_api = await import(`${process.cwd()}/node_modules/agentlang/out/runtime/api.js`);
-
-const makeInstance = al_api.makeInstance;
+const makeInstance = agentlang.makeInstance;
 
 function asInstance(entity, entityType) {
   const instanceMap = new Map(Object.entries(entity));
