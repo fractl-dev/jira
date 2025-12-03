@@ -167,8 +167,7 @@ const makeRequest = async (endpoint, options = {}) => {
   };
 
   console.log(
-    `JIRA RESOLVER: making http request ${
-      options.method
+    `JIRA RESOLVER: making http request ${options.method
     } ${url} with options ${JSON.stringify(options)}`
   );
 
@@ -266,7 +265,7 @@ export const createIssue = async (env, attributes) => {
   const description = attributes.attributes.get('description');
   const assignee = attributes.attributes.get('assignee');
   const labels = attributes.attributes.get('labels');
-  const project = attributes.attributes.get('project');
+  const project = attributes.attributes.get('project_name') || process.env.JIRA_PROJECT;
   const issueType = attributes.attributes.get('issue_type');
 
   if (!summary || !project || !issueType) {
@@ -313,12 +312,12 @@ export const createIssue = async (env, attributes) => {
   const data = { fields };
 
   try {
-    const result = await makePostRequest(`/ex/jira/${cloudId}/rest/api/3/issue`, data);
+    const result = await makePostRequest(`/rest/api/3/issue`, data);
     return asInstance(
       {
         id: result.id,
         key: result.key,
-        self: result.self,
+        summary: result.summary,
       },
       'Issue'
     );
@@ -535,8 +534,12 @@ async function handleSubsIssues(resolver) {
 }
 
 export async function subsIssues(resolver) {
+  const intervalMinutes = parseInt(process.env.JIRA_POLL_INTERVAL_MINUTES)
+  if (!intervalMinutes) {
+    console.log('JIRA RESOLVER: Poll interval not set, exiting subscriptions')
+    return
+  }
   await handleSubsIssues(resolver);
-  const intervalMinutes = parseInt(process.env.JIRA_POLL_INTERVAL_MINUTES) || 5;
   const intervalMs = intervalMinutes * 60 * 1000;
   console.log(`JIRA RESOLVER: Setting issues polling interval to ${intervalMinutes} minutes`);
   setInterval(async () => {
